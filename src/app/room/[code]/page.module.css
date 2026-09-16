@@ -82,11 +82,18 @@
   border-radius: 50%;
   background: var(--text-muted);
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .statusDot.connected {
   background: var(--success);
   box-shadow: 0 0 8px var(--success);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--success); }
+  50% { box-shadow: 0 0 16px var(--success), 0 0 24px rgba(16, 185, 129, 0.3); }
 }
 
 /* ─── Video grid ──────────────────────────────── */
@@ -142,15 +149,39 @@
   left: 14px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
+  gap: 8px;
+  padding: 5px 14px 5px 5px;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   border-radius: 100px;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: #fff;
   border: 1px solid rgba(255,255,255,0.08);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.videoAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.videoAvatar.remoteAvatar {
+  background: linear-gradient(135deg, #10b981, #34d399);
 }
 
 /* ─── Controls ────────────────────────────────── */
@@ -202,6 +233,7 @@
   background: rgba(255,255,255,0.05);
   border: 1px solid var(--border);
   color: var(--text-muted);
+  transition: all 0.3s ease;
 }
 
 .connBadge.live {
@@ -217,7 +249,7 @@
   padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px;
   scroll-behavior: smooth;
 }
 
@@ -241,14 +273,47 @@
   padding: 20px;
 }
 
-.bubble {
+/* ─── Chat bubbles with username ──────────────── */
+.bubbleWrap {
+  display: flex;
+  flex-direction: column;
   max-width: 82%;
+  animation: popIn 0.2s ease-out;
+}
+
+.bubbleWrap.self {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.bubbleWrap.other {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.bubbleName {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0 6px;
+  margin-bottom: 3px;
+  color: var(--text-muted);
+}
+
+.bubbleWrap.self .bubbleName {
+  color: var(--primary-light);
+}
+
+.bubbleWrap.other .bubbleName {
+  color: var(--success);
+}
+
+.bubble {
   padding: 10px 14px;
   border-radius: 18px;
   font-size: 0.9rem;
   line-height: 1.5;
   word-break: break-word;
-  animation: popIn 0.2s ease-out;
 }
 
 @keyframes popIn {
@@ -257,14 +322,12 @@
 }
 
 .bubble.self {
-  align-self: flex-end;
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
   color: #fff;
   border-bottom-right-radius: 4px;
 }
 
 .bubble.other {
-  align-self: flex-start;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid var(--border);
   color: var(--text);

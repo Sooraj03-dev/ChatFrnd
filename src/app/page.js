@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Video, Shield, Zap, ArrowRight, Lock } from "lucide-react";
+import { Video, Shield, Zap, ArrowRight, Lock, User } from "lucide-react";
 import styles from "./page.module.css";
 
 function generateCode() {
@@ -11,23 +11,43 @@ function generateCode() {
 
 export default function Home() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [error, setError] = useState("");
 
+  const validateName = () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError("Please enter your name to continue.");
+      return false;
+    }
+    if (trimmed.length > 20) {
+      setError("Name must be 20 characters or less.");
+      return false;
+    }
+    return true;
+  };
+
   const handleCreateRoom = () => {
+    if (!validateName()) return;
+    sessionStorage.setItem("chatfrnd_username", name.trim());
     const code = generateCode();
     router.push(`/room/${code}?mode=host`);
   };
 
   const handleJoinRoom = (e) => {
     e.preventDefault();
+    if (!validateName()) return;
     const trimmed = joinCode.trim();
     if (trimmed.length === 6 && /^\d+$/.test(trimmed)) {
+      sessionStorage.setItem("chatfrnd_username", name.trim());
       router.push(`/room/${trimmed}?mode=guest`);
     } else {
       setError("Please enter a valid 6-digit numeric code.");
     }
   };
+
+  const initial = name.trim() ? name.trim()[0].toUpperCase() : "";
 
   return (
     <div className={styles.page}>
@@ -39,7 +59,7 @@ export default function Home() {
           <span className={styles.logoText}>ChatFrnd</span>
         </div>
         <p className={styles.tagline}>
-          Instant private video calls & chat — no account needed. Just share a 6-digit code.
+          Instant private video calls &amp; chat — no account needed. Just share a 6-digit code.
         </p>
         <div className={styles.features}>
           <span className={styles.pill}><Lock size={12} /> End-to-end P2P</span>
@@ -49,6 +69,33 @@ export default function Home() {
       </div>
 
       <div className={`${styles.card} glass`}>
+        <span className={styles.sectionLabel}>Your name</span>
+
+        <div className={styles.nameRow}>
+          <div className={styles.avatarPreview}>
+            {initial ? (
+              <span className={styles.avatarInitial}>{initial}</span>
+            ) : (
+              <User size={18} color="var(--text-muted)" />
+            )}
+          </div>
+          <input
+            id="name-input"
+            type="text"
+            className={`input-field ${styles.nameInput}`}
+            placeholder="Enter your name…"
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              setError("");
+            }}
+            maxLength={20}
+            autoFocus
+          />
+        </div>
+
+        <div className={styles.dividerThick} />
+
         <span className={styles.sectionLabel}>Start a conversation</span>
 
         <button className={`btn-primary ${styles.createBtn}`} onClick={handleCreateRoom}>

@@ -18,7 +18,20 @@ export default function Room() {
 
   const [chatInput, setChatInput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [myName, setMyName] = useState("");
   const messagesEndRef = useRef(null);
+
+  // Retrieve username from sessionStorage
+  useEffect(() => {
+    const stored = sessionStorage.getItem("chatfrnd_username");
+    if (stored) {
+      // eslint-disable-next-line
+      setMyName(stored);
+    } else {
+      // eslint-disable-next-line
+      setMyName("You");
+    }
+  }, []);
 
   const {
     isConnected,
@@ -31,7 +44,8 @@ export default function Room() {
     isVideoOff,
     toggleVideo,
     error,
-  } = usePeer(code, mode);
+    remoteName,
+  } = usePeer(code, mode, myName);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -55,6 +69,10 @@ export default function Room() {
   const handleLeave = () => {
     router.push("/");
   };
+
+  const myInitial = myName ? myName[0].toUpperCase() : "Y";
+  const remoteInitial = remoteName ? remoteName[0].toUpperCase() : "F";
+  const displayRemoteName = remoteName || "Friend";
 
   return (
     <div className={styles.room}>
@@ -82,7 +100,7 @@ export default function Room() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div className={`${styles.statusDot} ${isConnected ? styles.connected : ""}`} />
             <span style={{ fontSize: "0.82rem", color: "var(--text-subtle)" }}>
-              {isConnected ? "Connected" : mode === "host" ? "Waiting for friend…" : "Connecting…"}
+              {isConnected ? `Connected with ${displayRemoteName}` : mode === "host" ? "Waiting for friend…" : "Connecting…"}
             </span>
           </div>
         </div>
@@ -101,7 +119,8 @@ export default function Room() {
           <div className={styles.videoBox}>
             <video ref={localVideoRef} autoPlay muted playsInline />
             <div className={styles.videoLabel}>
-              <User size={12} /> You
+              <div className={styles.videoAvatar}>{myInitial}</div>
+              {myName || "You"}
             </div>
           </div>
 
@@ -120,7 +139,8 @@ export default function Room() {
             )}
             {isConnected && (
               <div className={styles.videoLabel}>
-                <User size={12} /> Friend
+                <div className={`${styles.videoAvatar} ${styles.remoteAvatar}`}>{remoteInitial}</div>
+                {displayRemoteName}
               </div>
             )}
           </div>
@@ -170,8 +190,13 @@ export default function Room() {
             </div>
           ) : (
             messages.map((m) => (
-              <div key={m.id} className={`${styles.bubble} ${styles[m.sender]}`}>
-                {m.text}
+              <div key={m.id} className={`${styles.bubbleWrap} ${styles[m.sender]}`}>
+                <span className={styles.bubbleName}>
+                  {m.sender === "self" ? myName || "You" : m.senderName || displayRemoteName}
+                </span>
+                <div className={`${styles.bubble} ${styles[m.sender]}`}>
+                  {m.text}
+                </div>
               </div>
             ))
           )}

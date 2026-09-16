@@ -71,6 +71,50 @@
   margin-bottom: -8px;
 }
 
+/* ─── Name input row ────────────────── */
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatarPreview {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(124, 106, 247, 0.2), rgba(168, 156, 248, 0.15));
+  border: 1.5px solid rgba(124, 106, 247, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.avatarPreview:has(.avatarInitial) {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  border-color: transparent;
+  box-shadow: 0 4px 20px rgba(124, 106, 247, 0.3);
+}
+
+.avatarInitial {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.nameInput {
+  flex: 1;
+  font-weight: 500;
+}
+
+.dividerThick {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
+
 .createBtn {
   width: 100%;
   font-size: 1rem;
@@ -125,6 +169,15 @@
   background: rgba(240, 82, 82, 0.08);
   border: 1px solid rgba(240, 82, 82, 0.2);
   border-radius: 10px;
+  animation: shakeIn 0.3s ease;
+}
+
+@keyframes shakeIn {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
 }
 
 /* ─── Feature pills ─────────────────── */
