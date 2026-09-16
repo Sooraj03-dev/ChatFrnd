@@ -45,6 +45,8 @@ export default function Room() {
     toggleVideo,
     error,
     remoteName,
+    requireInteraction,
+    unlockAudio,
   } = usePeer(code, mode, myName);
 
   // Auto-scroll chat
@@ -155,6 +157,11 @@ export default function Room() {
                 <div className={`${styles.videoAvatar} ${styles.remoteAvatar}`}>{remoteInitial}</div>
                 {displayRemoteName}
               </div>
+            )}
+            {requireInteraction && (
+              <button className={styles.unlockAudioBtn} onClick={unlockAudio}>
+                Tap to unmute & play
+              </button>
             )}
           </div>
         </div>

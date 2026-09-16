@@ -61,6 +61,7 @@ export function usePeer(roomId, mode, myName) {
   const [error, setError] = useState("");
   const [connectionStatus, setConnectionStatus] = useState("initializing");
   const [remoteName, setRemoteName] = useState("");
+  const [requireInteraction, setRequireInteraction] = useState(false);
 
   const peerInstance = useRef(null);
   const localVideoRef = useRef(null);
@@ -103,20 +104,16 @@ export function usePeer(roomId, mode, myName) {
 
         // Force play on mobile — some browsers block autoplay
         const playPromise = remoteVideoRef.current.play();
-        if (playPromise) {
+        if (playPromise !== undefined) {
           playPromise.catch((err) => {
-            log("Auto-play blocked, retrying muted:", err.message);
-            // Fallback: try muted (mobile may require this for autoplay)
+            log("Auto-play blocked with sound, muting to force play:", err.message);
+            // Fallback: iOS Safari requires muted to play if user gesture expired
             if (remoteVideoRef.current) {
               remoteVideoRef.current.muted = true;
               remoteVideoRef.current.play().then(() => {
-                // Unmute after a brief delay
-                setTimeout(() => {
-                  if (remoteVideoRef.current) {
-                    remoteVideoRef.current.muted = false;
-                  }
-                }, 500);
-              }).catch(() => {});
+                // Show a "Tap to unmute" button to the user
+                setRequireInteraction(true);
+              }).catch((e) => log("Even muted play failed:", e));
             }
           });
         }
@@ -447,6 +444,14 @@ export function usePeer(roomId, mode, myName) {
     }
   }, []);
 
+  const unlockAudio = useCallback(() => {
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.muted = false;
+      remoteVideoRef.current.play().catch(e => console.error("Still blocked", e));
+      setRequireInteraction(false);
+    }
+  }, []);
+
   return {
     peerId,
     isConnected,
@@ -461,5 +466,7 @@ export function usePeer(roomId, mode, myName) {
     error,
     connectionStatus,
     remoteName,
+    requireInteraction,
+    unlockAudio,
   };
 }
