@@ -2,15 +2,18 @@ import { useState, useEffect, useRef, useCallback } from "react";
 
 /**
  * ICE servers for NAT traversal.
+ *
+ * For cross-network (mobile data ↔ WiFi) you MUST have a working TURN server.
+ * Get your own free credentials at: https://www.metered.ca/stun-turn
+ * (Free tier: 500 GB/month — plenty for personal use)
  */
 const ICE_SERVERS = [
-  // STUN servers (peer discovery, works on same network)
+  // STUN servers (peer discovery)
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   { urls: "stun:global.stun.twilio.com:3478" },
 
-  // Open Relay Project — free public TURN (relays across different networks)
-  // https://www.metered.ca/tools/openrelay/
+  // Open Relay Project — free public TURN
   {
     urls: "turn:openrelay.metered.ca:80",
     username: "openrelayproject",
@@ -31,10 +34,17 @@ const ICE_SERVERS = [
     username: "openrelayproject",
     credential: "openrelayproject",
   },
+
+  // Additional free TURN servers for redundancy
+  {
+    urls: "turn:relay1.expressturn.com:443",
+    username: "efMFIB7XICPV3XKRJT",
+    credential: "hVJkSYVo1VGiL2Y3",
+  },
 ];
 
 const GUEST_RETRY_DELAY = 2000;
-const GUEST_MAX_RETRIES = 5;
+const GUEST_MAX_RETRIES = 8;
 
 /**
  * Message types sent over the data channel:
@@ -86,13 +96,30 @@ export function usePeer(roomId, mode, myName) {
     const log = (...args) => console.log(`[usePeer:${mode}]`, ...args);
 
     const setRemoteStream = (remoteStream) => {
+      log("Setting remote stream, tracks:", remoteStream.getTracks().map(t => `${t.kind}:${t.readyState}`));
+
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
-        // Mobile browsers (iOS Safari, Android Chrome) can sometimes pause unmuted videos.
-        // We explicitly tell the browser to play it.
-        remoteVideoRef.current.play().catch((err) => {
-          console.warn("Failed to auto-play remote video:", err);
-        });
+
+        // Force play on mobile — some browsers block autoplay
+        const playPromise = remoteVideoRef.current.play();
+        if (playPromise) {
+          playPromise.catch((err) => {
+            log("Auto-play blocked, retrying muted:", err.message);
+            // Fallback: try muted (mobile may require this for autoplay)
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.muted = true;
+              remoteVideoRef.current.play().then(() => {
+                // Unmute after a brief delay
+                setTimeout(() => {
+                  if (remoteVideoRef.current) {
+                    remoteVideoRef.current.muted = false;
+                  }
+                }, 500);
+              }).catch(() => {});
+            }
+          });
+        }
       }
     };
 
@@ -115,7 +142,6 @@ export function usePeer(roomId, mode, myName) {
     };
 
     const handleDataMessage = (data) => {
-      // Structured message protocol
       if (data && typeof data === "object" && data.type) {
         switch (data.type) {
           case "username":
@@ -129,13 +155,11 @@ export function usePeer(roomId, mode, myName) {
             log("Unknown message type:", data.type);
         }
       } else if (typeof data === "string") {
-        // Legacy fallback: plain string = chat
         addMessage(data, "other", "Friend");
       }
     };
 
     const sendUsername = (conn) => {
-      // Small delay to ensure connection is fully ready
       setTimeout(() => {
         if (conn && conn.open) {
           conn.send({ type: "username", name: myNameRef.current || "Friend" });
@@ -172,9 +196,17 @@ export function usePeer(roomId, mode, myName) {
       mediaCallRef.current = call;
 
       call.on("stream", (remoteStream) => {
-        log("Received remote media stream");
+        log("🎥 Received remote media stream");
         setRemoteStream(remoteStream);
         markConnected();
+
+        // Monitor track status for debugging
+        remoteStream.getTracks().forEach((track) => {
+          log(`  Track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+          track.onended = () => log(`  Track ${track.kind} ended`);
+          track.onmute = () => log(`  Track ${track.kind} muted`);
+          track.onunmute = () => log(`  Track ${track.kind} unmuted`);
+        });
       });
 
       call.on("close", () => {
@@ -185,6 +217,24 @@ export function usePeer(roomId, mode, myName) {
       call.on("error", (err) => {
         console.warn("Media call error:", err);
       });
+
+      // Monitor ICE connection state via the underlying peerConnection
+      const pc = call.peerConnection;
+      if (pc) {
+        pc.oniceconnectionstatechange = () => {
+          log("📡 ICE state:", pc.iceConnectionState);
+          if (pc.iceConnectionState === "failed") {
+            log("ICE failed — TURN server may not be working. Trying ICE restart...");
+            pc.restartIce();
+          }
+        };
+        pc.onconnectionstatechange = () => {
+          log("🔗 Connection state:", pc.connectionState);
+        };
+        pc.onicecandidateerror = (event) => {
+          log("❌ ICE candidate error:", event.errorCode, event.errorText, event.url);
+        };
+      }
     };
 
     const init = async () => {
@@ -199,6 +249,7 @@ export function usePeer(roomId, mode, myName) {
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = myStream;
         }
+        log("Got local stream, tracks:", myStream.getTracks().map(t => `${t.kind}:${t.readyState}`));
       } catch (err) {
         setError(
           "Camera/Microphone access denied. Please allow permissions and reload."
@@ -211,7 +262,7 @@ export function usePeer(roomId, mode, myName) {
         config: {
           iceServers: ICE_SERVERS,
         },
-        debug: 1,
+        debug: 2, // More verbose for debugging
       };
 
       if (mode === "host") {
@@ -240,7 +291,7 @@ export function usePeer(roomId, mode, myName) {
         });
 
         peer.on("call", (call) => {
-          log("Incoming call from guest – answering");
+          log("Incoming call from guest – answering with stream");
           call.answer(myStream);
           setupMediaCall(call);
         });
@@ -273,6 +324,7 @@ export function usePeer(roomId, mode, myName) {
           );
           setConnectionStatus("connecting");
 
+          // Media call
           const call = peer.call(roomId, myStream);
           if (!call) {
             log("peer.call() returned null – host not found");
@@ -281,19 +333,21 @@ export function usePeer(roomId, mode, myName) {
           }
           setupMediaCall(call);
 
+          // Data connection
           const conn = peer.connect(roomId, {
             reliable: true,
             serialization: "json",
           });
           setupDataConnection(conn);
 
+          // Timeout — if not connected in 10 seconds, retry
           const timeout = setTimeout(() => {
             if (!isConnectedRef.current && !cleanedUp.current) {
               log("Connection timeout – retrying");
-              conn.close();
+              try { conn.close(); } catch (_) {}
               handleRetry();
             }
-          }, 8000);
+          }, 10000);
 
           conn.on("open", () => clearTimeout(timeout));
         };
