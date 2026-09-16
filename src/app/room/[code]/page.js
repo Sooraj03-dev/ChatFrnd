@@ -117,7 +117,13 @@ export default function Room() {
         <div className={styles.videos}>
           {/* Local */}
           <div className={styles.videoBox}>
-            <video ref={localVideoRef} autoPlay muted playsInline />
+            <video
+              ref={localVideoRef}
+              autoPlay
+              muted
+              playsInline
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
             <div className={styles.videoLabel}>
               <div className={styles.videoAvatar}>{myInitial}</div>
               {myName || "You"}
@@ -126,7 +132,14 @@ export default function Room() {
 
           {/* Remote */}
           <div className={styles.videoBox}>
-            <video ref={remoteVideoRef} autoPlay playsInline />
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <video
+              ref={remoteVideoRef}
+              autoPlay
+              playsInline
+              webkit-playsinline=""
+              style={{ width: "100%", height: "100%", objectFit: "cover", background: "#000" }}
+            />
             {!isConnected && (
               <div className={styles.videoPlaceholder}>
                 <div className={styles.avatarCircle}>

@@ -376,47 +376,85 @@
 @media (max-width: 800px) {
   .room {
     flex-direction: column;
-    padding: 8px;
+    padding: 6px;
+    gap: 6px;
     height: 100dvh;
+    height: 100vh; /* fallback for older browsers */
+  }
+
+  .header {
+    padding: 10px 14px;
+    border-radius: 14px;
+  }
+
+  .brandName {
+    display: none;
+  }
+
+  .codeChip {
+    padding: 4px 10px;
+  }
+
+  .controls {
+    padding: 10px;
+    border-radius: 14px;
+    gap: 10px;
   }
 
   .sidebar {
     width: 100%;
-    height: 280px;
+    max-height: 240px;
     flex-shrink: 0;
   }
 
-  /* Picture-in-Picture layout for mobile videos */
+  /* ─ Video container ─ */
   .videos {
+    flex: 1;
     display: block;
     position: relative;
-    border-radius: 20px;
+    border-radius: 16px;
     overflow: hidden;
+    min-height: 200px;
   }
 
-  /* Local video (Picture-in-Picture) */
-  .videoBox:nth-child(1) {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    width: 100px;
-    height: 140px;
-    z-index: 10;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
-    border: 2px solid rgba(255,255,255,0.2);
-    border-radius: 12px;
-  }
-
-  /* Remove background/border from local video box so it floats cleanly */
-  .videoBox:nth-child(1) .videoLabel {
-    display: none; /* Hide label on small PiP */
-  }
-
-  /* Remote video (Full area) */
+  /* Remote video — fills entire area */
   .videoBox:nth-child(2) {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     border-radius: 0;
     border: none;
+    z-index: 1;
+  }
+
+  .videoBox:nth-child(2) video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Local video — small PiP overlay */
+  .videoBox:nth-child(1) {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    width: 90px;
+    height: 130px;
+    z-index: 10;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+    border: 2px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+    background: #0a0a12;
+  }
+
+  .videoBox:nth-child(1) video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .videoBox:nth-child(1) .videoLabel {
+    display: none;
   }
 }

@@ -11,6 +11,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
 export const metadata = {
   title: "ChatFrnd - Connect instantly",
   description: "Peer-to-peer video and text chatting using 6-digit codes.",
