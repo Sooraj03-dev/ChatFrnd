@@ -4,24 +4,32 @@ import { useState, useEffect, useRef, useCallback } from "react";
  * ICE servers for NAT traversal.
  */
 const ICE_SERVERS = [
+  // STUN servers (peer discovery, works on same network)
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
   { urls: "stun:global.stun.twilio.com:3478" },
-  { urls: "stun:stun.services.mozilla.com" },
+
+  // Open Relay Project — free public TURN (relays across different networks)
+  // https://www.metered.ca/tools/openrelay/
   {
-    urls: "turn:a.relay.metered.ca:80",
-    username: "e8dd65b92aad9a39368b7a05",
-    credential: "BkZhOCs+crX0YwJk",
+    urls: "turn:openrelay.metered.ca:80",
+    username: "openrelayproject",
+    credential: "openrelayproject",
   },
   {
-    urls: "turn:a.relay.metered.ca:443",
-    username: "e8dd65b92aad9a39368b7a05",
-    credential: "BkZhOCs+crX0YwJk",
+    urls: "turn:openrelay.metered.ca:443",
+    username: "openrelayproject",
+    credential: "openrelayproject",
   },
   {
-    urls: "turn:a.relay.metered.ca:443?transport=tcp",
-    username: "e8dd65b92aad9a39368b7a05",
-    credential: "BkZhOCs+crX0YwJk",
+    urls: "turn:openrelay.metered.ca:443?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject",
+  },
+  {
+    urls: "turn:openrelay.metered.ca:80?transport=tcp",
+    username: "openrelayproject",
+    credential: "openrelayproject",
   },
 ];
 
