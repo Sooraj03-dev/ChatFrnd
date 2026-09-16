@@ -6,9 +6,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" },
-  { urls: "stun:stun3.l.google.com:19302" },
-  { urls: "stun:stun4.l.google.com:19302" },
+  { urls: "stun:global.stun.twilio.com:3478" },
+  { urls: "stun:stun.services.mozilla.com" },
   {
     urls: "turn:a.relay.metered.ca:80",
     username: "e8dd65b92aad9a39368b7a05",
@@ -81,6 +80,11 @@ export function usePeer(roomId, mode, myName) {
     const setRemoteStream = (remoteStream) => {
       if (remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = remoteStream;
+        // Mobile browsers (iOS Safari, Android Chrome) can sometimes pause unmuted videos.
+        // We explicitly tell the browser to play it.
+        remoteVideoRef.current.play().catch((err) => {
+          console.warn("Failed to auto-play remote video:", err);
+        });
       }
     };
 
